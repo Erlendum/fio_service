@@ -22,6 +22,12 @@ type Config struct {
 	Database databaseConfig
 	Redis    RedisConfig
 	Kafka    KafkaConfig
+	Logger   LoggerConfig
+}
+
+type LoggerConfig struct {
+	Path  string
+	Level string
 }
 
 type serverConfig struct {
@@ -67,6 +73,9 @@ func Init() (*Config, error) {
 	brokerStr := os.Getenv("KAFKA_BROKERS")
 	brokers := strings.Split(brokerStr, ",")
 
+	logPath := os.Getenv("LOG_PATH")
+	level := os.Getenv("LOG_LEVEL")
+
 	return &Config{
 		Server: serverConfig{
 			Port:               defaultServerPort,
@@ -87,6 +96,10 @@ func Init() (*Config, error) {
 		},
 		Kafka: KafkaConfig{
 			Brokers: brokers,
+		},
+		Logger: LoggerConfig{
+			Path:  logPath,
+			Level: level,
 		},
 	}, nil
 }
