@@ -54,7 +54,7 @@ func Init() (*Config, error) {
 		return nil, fmt.Errorf("failed to load environment variables from file: %v", err)
 	}
 	driver := os.Getenv("DRIVER")
-	dsn := os.Getenv("DSN_COURSES")
+	dsn := os.Getenv("DSN")
 
 	host := os.Getenv("HOST_REDIS")
 	port := os.Getenv("PORT_REDIS")
