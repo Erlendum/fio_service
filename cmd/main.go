@@ -7,6 +7,7 @@ import (
 	"fio_service/internal/server"
 	cache "fio_service/pkg/cache/redis"
 	"fio_service/pkg/database"
+	"fio_service/pkg/kafka"
 	"fio_service/pkg/logger"
 	"fmt"
 	"log"
@@ -18,9 +19,10 @@ import (
 )
 
 type App struct {
-	config *config.Config
-	logger *logger.Logger
-	server *server.Server
+	config   *config.Config
+	logger   *logger.Logger
+	server   *server.Server
+	consumer *kafka.Consumer
 }
 
 func (a *App) Init() {
@@ -44,6 +46,11 @@ func (a *App) Init() {
 	memCache, err := cache.NewRedisCache(context.Background(), cfg.Redis)
 	if err != nil {
 		a.logger.Fatalf("error mem cache init: %v", err)
+	}
+
+	a.consumer, err = kafka.NewConsumer(a.config.Kafka.Brokers, *a.logger)
+	if err != nil {
+		a.logger.Fatalf("error creating Kafka consumer: %v", err)
 	}
 
 	fmt.Println(db)
