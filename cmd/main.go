@@ -23,6 +23,7 @@ type App struct {
 	logger   *logger.Logger
 	server   *server.Server
 	consumer *kafka.Consumer
+	producer *kafka.Producer
 }
 
 func (a *App) Init() {
@@ -48,6 +49,11 @@ func (a *App) Init() {
 		a.logger.Fatalf("error mem cache init: %v", err)
 	}
 
+	a.producer, err = kafka.NewProducer(cfg.Kafka.Brokers, *a.logger)
+	if err != nil {
+		a.logger.Fatalf("error creating Kafka producer: %v", err)
+	}
+
 	a.consumer, err = kafka.NewConsumer(a.config.Kafka.Brokers, *a.logger)
 	if err != nil {
 		a.logger.Fatalf("error creating Kafka consumer: %v", err)
@@ -56,8 +62,8 @@ func (a *App) Init() {
 	fmt.Println(db)
 	fmt.Println(memCache)
 
-	srv := server.NewServer(cfg, nil)
-	a.server = srv
+	a.server = server.NewServer(cfg, nil)
+
 }
 
 func main() {
@@ -70,7 +76,7 @@ func main() {
 		}
 	}()
 
-	log.Println("server started ", a.config.Server.Port)
+	a.logger.Println("server started ", a.config.Server.Port)
 
 	quit := make(chan os.Signal, 1)
 
@@ -86,8 +92,8 @@ func main() {
 	if err := a.server.Stop(ctx); err != nil {
 		a.logger.Fatalf("failed to stop server %v", err)
 	}
+	a.logger.Println("server stopped ")
 	if err := a.logger.Close(); err != nil {
 		a.logger.Fatalf("failed to close logger %v", err)
 	}
-	log.Println("server stopped ")
 }
