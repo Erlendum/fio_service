@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fio_service/internal/config"
+	"fio_service/internal/repository"
+	"fio_service/internal/repository/postgres_repository"
 	"fio_service/internal/server"
 	cache "fio_service/pkg/cache/redis"
 	"fio_service/pkg/database"
@@ -19,11 +22,27 @@ import (
 )
 
 type App struct {
-	config   *config.Config
-	logger   *logger.Logger
-	server   *server.Server
-	consumer *kafka.Consumer
-	producer *kafka.Producer
+	config       *config.Config
+	logger       *logger.Logger
+	server       *server.Server
+	consumer     *kafka.Consumer
+	producer     *kafka.Producer
+	repositories *appRepositoryFields
+}
+
+type appRepositoryFields struct {
+	personRepository repository.PersonRepository
+}
+
+func (a *App) initPostgresRepositories(db *sql.DB) *appRepositoryFields {
+	if db == nil {
+		return nil
+	}
+	f := &appRepositoryFields{
+		personRepository: postgres_repository.CreatePersonPostgresRepository(db),
+	}
+
+	return f
 }
 
 func (a *App) Init() {
@@ -59,6 +78,7 @@ func (a *App) Init() {
 		a.logger.Fatalf("error creating Kafka consumer: %v", err)
 	}
 
+	a.repositories = a.initPostgresRepositories(db)
 	fmt.Println(db)
 	fmt.Println(memCache)
 

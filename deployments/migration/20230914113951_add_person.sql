@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 create schema if not exists service;
-create table service.person (
+create table service.persons (
     id serial primary key,
     name text not null,
     surname text not null,
@@ -11,12 +11,12 @@ create table service.person (
     nationality text not null
 );
 
-alter table service.person
+alter table service.persons
     add constraint correct_gender check ( gender = 'Male' or gender = 'Female' );
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-drop table if exists service.person;
+drop table if exists service.persons;
 drop schema if exists service;
 -- +goose StatementEnd
