@@ -2,6 +2,7 @@
 -- +goose StatementBegin
 create schema if not exists service;
 create table service.person (
+    id serial primary key,
     name text not null,
     surname text not null,
     patronymic text,
