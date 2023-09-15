@@ -8,11 +8,13 @@ import (
 	"fio_service/internal/repository"
 	"fio_service/internal/repository/postgres_repository"
 	"fio_service/internal/server"
-	cache "fio_service/pkg/cache/redis"
+	"fio_service/internal/service"
+	"fio_service/internal/service/serviceImpl"
+	"fio_service/pkg/cache"
+	redisCache "fio_service/pkg/cache/redis"
 	"fio_service/pkg/database"
 	"fio_service/pkg/kafka"
 	"fio_service/pkg/logger"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -25,13 +27,26 @@ type App struct {
 	config       *config.Config
 	logger       *logger.Logger
 	server       *server.Server
-	consumer     *kafka.Consumer
-	producer     *kafka.Producer
 	repositories *appRepositoryFields
+	services     *appServiceFields
+}
+
+type appServiceFields struct {
+	PersonService service.PersonService
+	KafkaService  service.KafkaService
 }
 
 type appRepositoryFields struct {
 	personRepository repository.PersonRepository
+}
+
+func (a *App) initServices(r *appRepositoryFields, c *cache.Cache, producer *kafka.Producer, consumer *kafka.Consumer) *appServiceFields {
+	f := &appServiceFields{
+		PersonService: serviceImpl.NewPersonServiceImplementation(r.personRepository, a.logger, *c, a.config.Redis.Ttl),
+		KafkaService:  serviceImpl.NewKafkaSerivce(producer, consumer, r.personRepository),
+	}
+
+	return f
 }
 
 func (a *App) initPostgresRepositories(db *sql.DB) *appRepositoryFields {
@@ -63,24 +78,23 @@ func (a *App) Init() {
 		a.logger.Fatal(err)
 	}
 
-	memCache, err := cache.NewRedisCache(context.Background(), cfg.Redis)
+	memCache, err := redisCache.NewRedisCache(context.Background(), cfg.Redis)
 	if err != nil {
 		a.logger.Fatalf("error mem cache init: %v", err)
 	}
 
-	a.producer, err = kafka.NewProducer(cfg.Kafka.Brokers, *a.logger)
+	producer, err := kafka.NewProducer(cfg.Kafka.Brokers, *a.logger)
 	if err != nil {
 		a.logger.Fatalf("error creating Kafka producer: %v", err)
 	}
 
-	a.consumer, err = kafka.NewConsumer(a.config.Kafka.Brokers, *a.logger)
+	consumer, err := kafka.NewConsumer(a.config.Kafka.Brokers, *a.logger)
 	if err != nil {
 		a.logger.Fatalf("error creating Kafka consumer: %v", err)
 	}
 
 	a.repositories = a.initPostgresRepositories(db)
-	fmt.Println(db)
-	fmt.Println(memCache)
+	a.services = a.initServices(a.repositories, &memCache, producer, consumer)
 
 	a.server = server.NewServer(cfg, nil)
 
