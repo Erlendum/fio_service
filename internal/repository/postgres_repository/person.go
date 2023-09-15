@@ -40,11 +40,11 @@ func NewPersonPostgresRepository(db *sqlx.DB) repository.PersonRepository {
 	return &PersonPostgresRepository{db: db}
 }
 
-func (p *PersonPostgresRepository) Create(ctx context.Context, user *models.Person) error {
+func (p *PersonPostgresRepository) Create(ctx context.Context, person *models.Person) error {
 	query := `insert into service.persons (name, surname, patronymic, age, gender, nationality) values
 											 ($1, $2, $3, $4, $5, $6);`
-	_, err := p.db.ExecContext(ctx, query, user.Name, user.Surname, user.Patronymic, user.Age,
-		user.Gender, user.Nationality)
+	_, err := p.db.ExecContext(ctx, query, person.Name, person.Surname, person.Patronymic, person.Age,
+		person.Gender, person.Nationality)
 	if err != nil {
 		return err
 	}

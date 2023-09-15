@@ -36,17 +36,17 @@ func (m *MockPersonRepository) EXPECT() *MockPersonRepositoryMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockPersonRepository) Create(ctx context.Context, user *models.Person) error {
+func (m *MockPersonRepository) Create(ctx context.Context, person *models.Person) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, user)
+	ret := m.ctrl.Call(m, "Create", ctx, person)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockPersonRepositoryMockRecorder) Create(ctx, user interface{}) *gomock.Call {
+func (mr *MockPersonRepositoryMockRecorder) Create(ctx, person interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPersonRepository)(nil).Create), ctx, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockPersonRepository)(nil).Create), ctx, person)
 }
 
 // Delete mocks base method.
