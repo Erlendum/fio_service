@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fio_service/internal/config"
+	myHttp "fio_service/internal/delivery/http"
 	"fio_service/internal/repository"
 	"fio_service/internal/repository/postgres_repository"
 	"fio_service/internal/server"
@@ -28,22 +29,18 @@ type App struct {
 	logger       *logger.Logger
 	server       *server.Server
 	repositories *appRepositoryFields
-	services     *appServiceFields
-}
-
-type appServiceFields struct {
-	PersonService service.PersonService
-	KafkaService  service.KafkaService
+	services     *service.Services
+	hander       *myHttp.Handler
 }
 
 type appRepositoryFields struct {
 	personRepository repository.PersonRepository
 }
 
-func (a *App) initServices(r *appRepositoryFields, c *cache.Cache, producer *kafka.Producer, consumer *kafka.Consumer) *appServiceFields {
-	f := &appServiceFields{
-		PersonService: serviceImpl.NewPersonServiceImplementation(r.personRepository, a.logger, *c, a.config.Redis.Ttl),
-		KafkaService:  serviceImpl.NewKafkaSerivce(producer, consumer, r.personRepository),
+func (a *App) initServices(r *appRepositoryFields, c *cache.Cache, producer *kafka.Producer, consumer *kafka.Consumer) *service.Services {
+	f := &service.Services{
+		Person: serviceImpl.NewPersonServiceImplementation(r.personRepository, a.logger, *c, a.config.Redis.Ttl),
+		Kafka:  serviceImpl.NewKafkaSerivce(producer, consumer, r.personRepository),
 	}
 
 	return f
@@ -96,7 +93,9 @@ func (a *App) Init() {
 	a.repositories = a.initPostgresRepositories(db)
 	a.services = a.initServices(a.repositories, &memCache, producer, consumer)
 
-	a.server = server.NewServer(cfg, nil)
+	a.hander = myHttp.NewHandler(a.services, a.logger)
+
+	a.server = server.NewServer(cfg, a.hander.Init())
 
 }
 

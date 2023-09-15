@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "/person-service/api/person;person";
+
+message Person {
+  string name = 1;
+  string surname = 2;
+  string patronymic = 3;
+  uint64 age = 4;
+  string gender = 5;
+  string nationality = 6;
+}

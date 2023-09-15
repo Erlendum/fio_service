@@ -27,6 +27,12 @@ goose-install:
 	go get github.com/pressly/goose/cmd/goose
 	go install github.com/pressly/goose/cmd/goose
 
+protoc-gen:
+	protoc --go_out=paths=source_relative:./pkg ./api/person/person.proto
+
+swag-gen:
+	swag init -g ./internal/delivery/http/v1/person.go
+
 migrate-up:
 	goose --dir=$(MIGRATION_DIR) postgres $(DSN_MIGRATION) up
 
