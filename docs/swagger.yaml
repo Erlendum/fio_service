@@ -1,0 +1,181 @@
+definitions:
+  models.Person:
+    properties:
+      age:
+        type: integer
+      gender:
+        $ref: '#/definitions/models.PersonGender'
+      id:
+        type: integer
+      name:
+        type: string
+      nationality:
+        type: string
+      patronymic:
+        type: string
+      surname:
+        type: string
+    type: object
+  models.PersonGender:
+    enum:
+    - Male
+    - Female
+    type: string
+    x-enum-varnames:
+    - MaleUserGender
+    - FemaleUserGender
+  v1.Resposne:
+    properties:
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /person/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Person
+      parameters:
+      - description: person id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+      summary: Delete Person
+      tags:
+      - Person
+    get:
+      consumes:
+      - application/json
+      description: Get Person by ID
+      parameters:
+      - description: person id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Person'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+      summary: Get Person by ID
+      tags:
+      - Person
+    put:
+      consumes:
+      - application/json
+      description: Update Person
+      parameters:
+      - description: person update fields
+        in: body
+        name: person
+        required: true
+        schema:
+          $ref: '#/definitions/models.Person'
+      - description: person id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+      summary: Update Person
+      tags:
+      - Person
+  /person/create:
+    put:
+      consumes:
+      - application/json
+      description: Create new Person
+      parameters:
+      - description: Person
+        in: body
+        name: struct
+        required: true
+        schema:
+          $ref: '#/definitions/models.Person'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+      summary: Create new Person
+      tags:
+      - Person
+  /person/list:
+    get:
+      consumes:
+      - application/json
+      description: Get Person List
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Person'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/v1.Resposne'
+      summary: Get Person List
+      tags:
+      - Person
+swagger: "2.0"
