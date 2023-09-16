@@ -1,3 +1,4 @@
+basePath: /api/v1
 definitions:
   models.Person:
     properties:
@@ -24,11 +25,27 @@ definitions:
     x-enum-varnames:
     - MaleUserGender
     - FemaleUserGender
+  person.Person:
+    properties:
+      age:
+        type: integer
+      gender:
+        type: string
+      name:
+        type: string
+      nationality:
+        type: string
+      patronymic:
+        type: string
+      surname:
+        type: string
+    type: object
   v1.Resposne:
     properties:
       message:
         type: string
     type: object
+host: localhost:8000
 info:
   contact: {}
 paths:
@@ -124,7 +141,7 @@ paths:
       tags:
       - Person
   /person/create:
-    put:
+    post:
       consumes:
       - application/json
       description: Create new Person
@@ -134,7 +151,7 @@ paths:
         name: struct
         required: true
         schema:
-          $ref: '#/definitions/models.Person'
+          $ref: '#/definitions/person.Person'
       produces:
       - application/json
       responses:

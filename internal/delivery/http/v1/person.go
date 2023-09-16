@@ -2,19 +2,20 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	"fio_service/internal/models"
-	"fio_service/pkg/api/person"
 	"github.com/gin-gonic/gin"
-	"github.com/golang/protobuf/proto"
 	"io"
 	"net/http"
 	"strconv"
 )
 
+// @host		localhost:8000
+// @BasePath	/api/v1
 func (h *Handler) initPersonRoutes(api *gin.RouterGroup) {
 	g := api.Group("/person")
 	{
-		g.POST("/", h.create)
+		g.POST("/create", h.create)
 		g.GET("/:id", h.get)
 		g.DELETE("/:id", h.delete)
 		g.PUT("/:id", h.update)
@@ -28,31 +29,31 @@ func (h *Handler) initPersonRoutes(api *gin.RouterGroup) {
 // @ModuleID		create
 // @Accept			json
 // @Produce		json
-// @Param			struct	body		models.Person	true	"Person"
+// @Param			struct	body		person.Person	true	"Person"
 // @Success		201		{object}	Resposne
 // @Failure		400		{object}	Resposne
 // @Failure		500		{object}	Resposne
-// @Router			/person/create [put]
+// @Router			/person/create [post]
 func (h *Handler) create(ctx *gin.Context) {
-	var inp person.Person
+	var p models.Person
 
 	data, _ := io.ReadAll(ctx.Request.Body)
 
-	err := proto.Unmarshal(data, &inp)
+	err := json.Unmarshal(data, &p)
 	if err != nil {
-		newResponse(ctx, http.StatusBadRequest, "Incorrect input data format")
+		newResponse(ctx, http.StatusBadRequest, "Incorrect input data format: "+err.Error())
 		return
 	}
 
 	if err := h.service.Person.Create(context.Background(), &models.Person{
-		Name:        inp.Name,
-		Surname:     inp.Surname,
-		Patronymic:  inp.Patronymic,
-		Age:         inp.Age,
-		Gender:      models.PersonGender(inp.Gender),
-		Nationality: inp.Nationality,
+		Name:        p.Name,
+		Surname:     p.Surname,
+		Patronymic:  p.Patronymic,
+		Age:         p.Age,
+		Gender:      p.Gender,
+		Nationality: p.Nationality,
 	}); err != nil {
-		newResponse(ctx, http.StatusInternalServerError, "Can't create a person")
+		newResponse(ctx, http.StatusInternalServerError, "Can't create a person: "+err.Error())
 		return
 	}
 
@@ -74,12 +75,12 @@ func (h *Handler) get(ctx *gin.Context) {
 	param := ctx.Param("id")
 	id, err := strconv.Atoi(param)
 	if err != nil {
-		newResponse(ctx, http.StatusBadRequest, "Incorrect person ID")
+		newResponse(ctx, http.StatusBadRequest, "Incorrect person ID: "+err.Error())
 		return
 	}
 	p, err := h.service.Person.Get(context.Background(), uint64(id))
 	if err != nil {
-		newResponse(ctx, http.StatusInternalServerError, "Can't get a person")
+		newResponse(ctx, http.StatusInternalServerError, "Can't get a person: "+err.Error())
 		return
 	}
 
@@ -102,12 +103,12 @@ func (h *Handler) delete(ctx *gin.Context) {
 
 	id, err := strconv.Atoi(param)
 	if err != nil {
-		newResponse(ctx, http.StatusBadRequest, "Incorrect person ID")
+		newResponse(ctx, http.StatusBadRequest, "Incorrect person ID: "+err.Error())
 		return
 	}
 
 	if err := h.service.Person.Delete(context.Background(), uint64(id)); err != nil {
-		newResponse(ctx, http.StatusInternalServerError, "Can't delete a person")
+		newResponse(ctx, http.StatusInternalServerError, "Can't delete a person:"+err.Error())
 		return
 	}
 
@@ -127,45 +128,45 @@ func (h *Handler) delete(ctx *gin.Context) {
 // @Failure		500		{object}	Resposne
 // @Router			/person/{id} [put]
 func (h *Handler) update(ctx *gin.Context) {
-	var inp person.Person
+	var p models.Person
 	param := ctx.Param("id")
 
 	id, err := strconv.Atoi(param)
 	if err != nil {
-		newResponse(ctx, http.StatusBadRequest, "Incorrect person ID")
+		newResponse(ctx, http.StatusBadRequest, "Incorrect person ID: "+err.Error())
 		return
 	}
 
 	data, _ := io.ReadAll(ctx.Request.Body)
 
-	if err := proto.Unmarshal(data, &inp); err != nil {
-		newResponse(ctx, http.StatusBadRequest, "Incorrect input data format")
+	if err := json.Unmarshal(data, &p); err != nil {
+		newResponse(ctx, http.StatusBadRequest, "Incorrect input data format: "+err.Error())
 		return
 	}
 
 	fields := make(models.PersonFieldsToUpdate)
 
-	if inp.Name != "" {
-		fields[models.PersonFieldName] = inp.Name
+	if p.Name != "" {
+		fields[models.PersonFieldName] = p.Name
 	}
-	if inp.Surname != "" {
-		fields[models.PersonFieldSurname] = inp.Surname
+	if p.Surname != "" {
+		fields[models.PersonFieldSurname] = p.Surname
 	}
-	if inp.Patronymic != "" {
-		fields[models.PersonFieldPatronymic] = inp.Patronymic
+	if p.Patronymic != "" {
+		fields[models.PersonFieldPatronymic] = p.Patronymic
 	}
-	if inp.Age != 0 {
-		fields[models.PersonFieldAge] = inp.Age
+	if p.Age != 0 {
+		fields[models.PersonFieldAge] = p.Age
 	}
-	if inp.Gender != "" {
-		fields[models.PersonFieldGender] = inp.Gender
+	if p.Gender != "" {
+		fields[models.PersonFieldGender] = p.Gender
 	}
-	if inp.Nationality != "" {
-		fields[models.PersonFieldNationality] = inp.Nationality
+	if p.Nationality != "" {
+		fields[models.PersonFieldNationality] = p.Nationality
 	}
 
 	if err := h.service.Person.Update(context.Background(), uint64(id), fields); err != nil {
-		newResponse(ctx, http.StatusInternalServerError, "Can't update a person")
+		newResponse(ctx, http.StatusInternalServerError, "Can't update a person: "+err.Error())
 		return
 	}
 

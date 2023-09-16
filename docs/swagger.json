@@ -3,9 +3,11 @@
     "info": {
         "contact": {}
     },
+    "host": "localhost:8000",
+    "basePath": "/api/v1",
     "paths": {
         "/person/create": {
-            "put": {
+            "post": {
                 "description": "Create new Person",
                 "consumes": [
                     "application/json"
@@ -24,7 +26,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Person"
+                            "$ref": "#/definitions/person.Person"
                         }
                     }
                 ],
@@ -263,6 +265,29 @@
                 "MaleUserGender",
                 "FemaleUserGender"
             ]
+        },
+        "person.Person": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nationality": {
+                    "type": "string"
+                },
+                "patronymic": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
+                }
+            }
         },
         "v1.Resposne": {
             "type": "object",
