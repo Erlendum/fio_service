@@ -7,23 +7,21 @@ import (
 )
 
 type Handler struct {
-	service    service.Services
-	responseCh chan []byte
-	logger     logger.Logger
+	service service.Services
+	logger  logger.Logger
 }
 
 func NewHandler(service *service.Services, logger *logger.Logger) *Handler {
 	return &Handler{
-		service:    *service,
-		responseCh: make(chan []byte),
-		logger:     *logger,
+		service: *service,
+		logger:  *logger,
 	}
 }
 
 func (h *Handler) Init(api *gin.RouterGroup) {
 	v1 := api.Group("/v1")
 	{
-		go h.consumeResponseMessages()
+		go h.consumeMessages()
 		h.initPersonRoutes(v1)
 
 	}

@@ -6,6 +6,7 @@ import (
 	"fio_service/internal/repository"
 	"fio_service/internal/service"
 	"fio_service/pkg/cache"
+	"fio_service/pkg/errors/repositoryErrors"
 	"fio_service/pkg/logger"
 	"strconv"
 	"time"
@@ -31,7 +32,21 @@ func (p *personServiceImplementation) Create(ctx context.Context, person *models
 	fields := map[string]interface{}{"name": person.Name, "surname": person.Surname}
 	err := p.personRepository.Create(ctx, person)
 	if err != nil {
-		p.logger.WithFields(fields).Error("person create failed" + err.Error())
+		p.logger.WithFields(fields).Error("person create failed: " + err.Error())
+		return err
+	}
+	p.logger.WithFields(fields).Info("person create completed")
+	return nil
+}
+
+func (p *personServiceImplementation) CreateWithEnrichment(ctx context.Context, person *models.Person) error {
+	fields := map[string]interface{}{"name": person.Name, "surname": person.Surname}
+	if len(person.Name) == 0 || len(person.Surname) == 0 {
+		return repositoryErrors.MissingRequiredFields
+	}
+	err := p.personRepository.Create(ctx, person)
+	if err != nil {
+		p.logger.WithFields(fields).Error("person create failed: " + err.Error())
 		return err
 	}
 	p.logger.WithFields(fields).Info("person create completed")
@@ -42,7 +57,7 @@ func (p *personServiceImplementation) Delete(ctx context.Context, id uint64) err
 	fields := map[string]interface{}{"id": id}
 	err := p.personRepository.Delete(ctx, id)
 	if err != nil {
-		p.logger.WithFields(fields).Error("person delete failed" + err.Error())
+		p.logger.WithFields(fields).Error("person delete failed: " + err.Error())
 		return err
 	}
 	p.logger.WithFields(fields).Info("person delete completed")
@@ -53,7 +68,7 @@ func (p *personServiceImplementation) Update(ctx context.Context, id uint64, fie
 	fields := map[string]interface{}{"id": id}
 	err := p.personRepository.Update(ctx, id, fieldsToUpdate)
 	if err != nil {
-		p.logger.WithFields(fields).Error("person update failed" + err.Error())
+		p.logger.WithFields(fields).Error("person update failed: " + err.Error())
 		return err
 	}
 	p.logger.WithFields(fields).Info("person update completed")
@@ -76,12 +91,12 @@ func (p *personServiceImplementation) Get(ctx context.Context, id uint64) (*mode
 	person, err := p.personRepository.Get(ctx, id)
 
 	if err != nil {
-		p.logger.WithFields(fields).Error("person get failed" + err.Error())
+		p.logger.WithFields(fields).Error("person get failed: " + err.Error())
 		return person, err
 	}
 
 	if err := p.cache.Set(ctx, "person:"+strconv.Itoa(int(id)), person, p.ttlCache); err != nil {
-		p.logger.WithFields(fields).Error("person caching failed" + err.Error())
+		p.logger.WithFields(fields).Error("person caching failed: " + err.Error())
 	}
 	p.logger.WithFields(fields).Info("person get completed")
 	return person, nil
@@ -100,12 +115,12 @@ func (p *personServiceImplementation) GetList(ctx context.Context) ([]models.Per
 	persons, err := p.personRepository.GetList(ctx)
 
 	if err != nil {
-		p.logger.Error("person get list failed" + err.Error())
+		p.logger.Error("person get list failed: " + err.Error())
 		return persons, err
 	}
 
 	if err := p.cache.Set(ctx, "persons", persons, p.ttlCache); err != nil {
-		p.logger.Error("person list caching failed" + err.Error())
+		p.logger.Error("person list caching failed: " + err.Error())
 	}
 
 	p.logger.Info("person get list completed")

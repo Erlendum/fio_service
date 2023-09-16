@@ -193,13 +193,33 @@ func (h *Handler) getList(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, p)
 }
 
-func (h *Handler) consumeResponseMessages() {
-	err := h.service.Kafka.ConsumeMessages("response", h.handleResponseMessage)
+func (h *Handler) consumeMessages() {
+	err := h.service.Kafka.ConsumeMessages("FIO", h.handleMessage)
 	if err != nil {
 		h.logger.Println(err)
 	}
 }
 
-func (h *Handler) handleResponseMessage(message string) {
-	h.responseCh <- []byte(message)
+func (h *Handler) handleMessage(message string) {
+	h.logger.Info("message received: \n" + message)
+	var p models.Person
+
+	err := json.Unmarshal([]byte(message), &p)
+	if err != nil {
+		if errIn := h.service.Kafka.SendMessages("FIO_FAILED", "invalid format: "+err.Error()); errIn != nil {
+			h.logger.Error("can't send error message to the topic")
+		}
+		return
+	}
+
+	if err := h.service.Person.CreateWithEnrichment(context.Background(), &models.Person{
+		Name:       p.Name,
+		Surname:    p.Surname,
+		Patronymic: p.Patronymic,
+	}); err != nil {
+		if errIn := h.service.Kafka.SendMessages("FIO_FAILED", "can't create a person: "+err.Error()); errIn != nil {
+			h.logger.Error("can't send error message to the topic")
+		}
+		return
+	}
 }

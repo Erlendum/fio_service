@@ -12,4 +12,6 @@ var (
 	ObjectDoesNotExists = fmt.Errorf("object %w", DoesNotExists)
 
 	InvalidField = errors.New("invalid fields")
+
+	MissingRequiredFields = errors.New("missing required fields")
 )
