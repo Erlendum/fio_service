@@ -23,6 +23,7 @@ type Config struct {
 	Redis    RedisConfig
 	Kafka    KafkaConfig
 	Logger   LoggerConfig
+	Handler  string
 }
 
 type LoggerConfig struct {
@@ -76,6 +77,8 @@ func Init() (*Config, error) {
 	logPath := os.Getenv("LOG_PATH")
 	level := os.Getenv("LOG_LEVEL")
 
+	handler := os.Getenv("HANDLER")
+
 	return &Config{
 		Server: serverConfig{
 			Port:               defaultServerPort,
@@ -101,5 +104,6 @@ func Init() (*Config, error) {
 			Path:  logPath,
 			Level: level,
 		},
+		Handler: handler,
 	}, nil
 }

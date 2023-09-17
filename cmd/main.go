@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fio_service/internal/config"
+	"fio_service/internal/delivery/graphql"
 	myHttp "fio_service/internal/delivery/http"
 	"fio_service/internal/repository"
 	"fio_service/internal/repository/postgres_repository"
@@ -30,7 +31,6 @@ type App struct {
 	server       *server.Server
 	repositories *appRepositoryFields
 	services     *service.Services
-	hander       *myHttp.Handler
 }
 
 type appRepositoryFields struct {
@@ -93,9 +93,13 @@ func (a *App) Init() {
 	a.repositories = a.initPostgresRepositories(db)
 	a.services = a.initServices(a.repositories, &memCache, producer, consumer)
 
-	a.hander = myHttp.NewHandler(a.services, a.logger)
-
-	a.server = server.NewServer(cfg, a.hander.Init())
+	if a.config.Handler == "rest" {
+		handler := myHttp.NewHandler(a.services, a.logger)
+		a.server = server.NewServer(cfg, handler.Init())
+	} else if a.config.Handler == "graphql" {
+		handler := graphql.NewHandler(a.services, a.logger)
+		a.server = server.NewServer(cfg, handler.Init())
+	}
 
 }
 

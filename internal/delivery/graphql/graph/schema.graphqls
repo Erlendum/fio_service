@@ -1,0 +1,29 @@
+type Query {
+    getPersonList: [Person]
+    getPerson(id: ID!): Person
+}
+
+type Mutation {
+    createPerson(input: NewPerson!): Boolean
+    deletePerson(id: ID!): Boolean
+    updatePerson(id: ID!, input: NewPerson!): Boolean
+}
+
+type Person {
+    Id: ID!
+    Name: String!
+    Surname: String!
+    Patronymic: String!
+    Age: Int!
+    Gender: String!
+    Nationality: String!
+}
+
+input NewPerson {
+    Name: String
+    Surname: String
+    Patronymic: String
+    Age: Int
+    Gender: String
+    Nationality: String
+}
