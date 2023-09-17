@@ -78,13 +78,15 @@ func (p *personServiceImplementation) Update(ctx context.Context, id uint64, fie
 func (p *personServiceImplementation) Get(ctx context.Context, id uint64) (*models.Person, error) {
 	fields := map[string]interface{}{"id": id}
 
-	cachedPerson, err := p.cache.Get(ctx, "person:"+strconv.Itoa(int(id)))
+	if p.cache != nil {
+		cachedPerson, err := p.cache.Get(ctx, "person:"+strconv.Itoa(int(id)))
 
-	if err == nil {
-		cachedData, ok := cachedPerson.(models.Person)
-		if ok {
-			p.logger.WithFields(fields).Info("person update completed")
-			return &cachedData, nil
+		if err == nil {
+			cachedData, ok := cachedPerson.(models.Person)
+			if ok {
+				p.logger.WithFields(fields).Info("person update completed")
+				return &cachedData, nil
+			}
 		}
 	}
 
@@ -95,23 +97,26 @@ func (p *personServiceImplementation) Get(ctx context.Context, id uint64) (*mode
 		return person, err
 	}
 
-	if err := p.cache.Set(ctx, "person:"+strconv.Itoa(int(id)), person, p.ttlCache); err != nil {
-		p.logger.WithFields(fields).Error("person caching failed: " + err.Error())
+	if p.cache != nil {
+		if err := p.cache.Set(ctx, "person:"+strconv.Itoa(int(id)), person, p.ttlCache); err != nil {
+			p.logger.WithFields(fields).Error("person caching failed: " + err.Error())
+		}
 	}
 	p.logger.WithFields(fields).Info("person get completed")
 	return person, nil
 }
 
 func (p *personServiceImplementation) GetList(ctx context.Context) ([]models.Person, error) {
-	cachedPerson, err := p.cache.Get(ctx, "persons")
+	if p.cache != nil {
+		cachedPerson, err := p.cache.Get(ctx, "persons")
 
-	if err == nil {
-		cachedData, ok := cachedPerson.([]models.Person)
-		if ok {
-			return cachedData, nil
+		if err == nil {
+			cachedData, ok := cachedPerson.([]models.Person)
+			if ok {
+				return cachedData, nil
+			}
 		}
 	}
-
 	persons, err := p.personRepository.GetList(ctx)
 
 	if err != nil {
@@ -119,10 +124,11 @@ func (p *personServiceImplementation) GetList(ctx context.Context) ([]models.Per
 		return persons, err
 	}
 
-	if err := p.cache.Set(ctx, "persons", persons, p.ttlCache); err != nil {
-		p.logger.Error("person list caching failed: " + err.Error())
+	if p.cache != nil {
+		if err := p.cache.Set(ctx, "persons", persons, p.ttlCache); err != nil {
+			p.logger.Error("person list caching failed: " + err.Error())
+		}
 	}
-
 	p.logger.Info("person get list completed")
 	return persons, nil
 }
