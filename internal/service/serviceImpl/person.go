@@ -2,13 +2,18 @@ package serviceImpl
 
 import (
 	"context"
+	"encoding/json"
 	"fio_service/internal/models"
 	"fio_service/internal/repository"
 	"fio_service/internal/service"
 	"fio_service/pkg/cache"
 	"fio_service/pkg/errors/repositoryErrors"
 	"fio_service/pkg/logger"
+	"fmt"
+	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -39,12 +44,79 @@ func (p *personServiceImplementation) Create(ctx context.Context, person *models
 	return nil
 }
 
+type ageResponse struct {
+	Count int64  `json:"count"`
+	Name  string `json:"name"`
+	Age   uint64 `json:"age"`
+}
+
+type genderResponse struct {
+	Count       int64   `json:"count"`
+	Name        string  `json:"name"`
+	Gender      string  `json:"gender"`
+	Probability float64 `json:"probability"`
+}
+
+type country struct {
+	Country_id  string  `json:"country_id"`
+	Probability float64 `json:"probability"`
+}
+
+type nationalityResponse struct {
+	Count   int64     `json:"count"`
+	Name    string    `json:"name"`
+	Country []country `json:"country"`
+}
+
+func getJson(url string, target interface{}) error {
+	r, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	return json.NewDecoder(r.Body).Decode(target)
+}
+
 func (p *personServiceImplementation) CreateWithEnrichment(ctx context.Context, person *models.Person) error {
 	fields := map[string]interface{}{"name": person.Name, "surname": person.Surname}
 	if len(person.Name) == 0 || len(person.Surname) == 0 {
 		return repositoryErrors.MissingRequiredFields
 	}
-	err := p.personRepository.Create(ctx, person)
+
+	urlAge := "https://api.agify.io/?name=%s"
+	urlGender := "https://api.genderize.io/?name=%s"
+	urlNationality := "https://api.nationalize.io/?name=%s"
+	urlAge = fmt.Sprintf(urlAge, url.QueryEscape(person.Name))
+	urlGender = fmt.Sprintf(urlGender, url.QueryEscape(person.Name))
+	urlNationality = fmt.Sprintf(urlNationality, url.QueryEscape(person.Name))
+
+	ageResp := new(ageResponse)
+	err := getJson(urlAge, ageResp)
+	if err != nil {
+		p.logger.WithFields(fields).Error("get age from api failed: " + err.Error())
+		return err
+	}
+
+	genderResp := new(genderResponse)
+	err = getJson(urlGender, genderResp)
+	if err != nil {
+		p.logger.WithFields(fields).Error("get gender from api failed: " + err.Error())
+		return err
+	}
+
+	nationalityResp := new(nationalityResponse)
+	err = getJson(urlNationality, nationalityResp)
+	if err != nil {
+		p.logger.WithFields(fields).Error("get nationality from api failed: " + err.Error())
+		return err
+	}
+
+	person.Age = ageResp.Age
+	genderResp.Gender = strings.ToUpper(string(genderResp.Gender[0])) + genderResp.Gender[1:]
+	person.Gender = models.PersonGender(genderResp.Gender)
+	person.Nationality = nationalityResp.Country[0].Country_id
+
+	err = p.personRepository.Create(ctx, person)
 	if err != nil {
 		p.logger.WithFields(fields).Error("person create failed: " + err.Error())
 		return err
