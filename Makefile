@@ -35,3 +35,6 @@ migrate-up:
 
 migrate-down:
 	goose --dir=$(MIGRATION_DIR) postgres $(DSN_MIGRATION) down
+
+test-all:
+	go test ./...
